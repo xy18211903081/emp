@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link href="/common/bootstrap/css/bootstrap.min.css" rel="stylesheet"/>
+    <link href="/common/datatable/DataTables-1.10.18/css/dataTables.bootstrap.min.css" rel="stylesheet"/>
+    <link href="/common/ztree/css/bootstrapStyle/bootstrapStyle.css" rel="stylesheet"/>
+    <link href="/common/fileinput/css/fileinput.min.css" rel="stylesheet"/>
+    <link href="/common/ztree/css/bootstrapStyle/bootstrapStyle.css" rel="stylesheet"/>
+
+
+    <script type="text/javascript" src="/common/jquery-3.3.1.min.js"></script>
+    <script type="text/javascript" src="/common/bootstrap/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="/common/datatable/DataTables-1.10.18/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" src="/common/datatable/DataTables-1.10.18/js/dataTables.bootstrap.min.js"></script>
+    <script type="text/javascript" src="/common/bootbox/bootbox.min.js"></script>
+    <script type="text/javascript" src="/common/ztree/js/jquery.ztree.all.min.js"></script>
+    <script type="text/javascript" src="/common/fileinput/js/fileinput.min.js"></script>
+    <script type="text/javascript" src="/common/dateFormat.js"></script>
+    <script type="text/javascript" src="/common/ztree/js/jquery.ztree.all.min.js"></script>
+
+</head>
+<body>
+
+<div>
+    <div style="width: 500px">
+    <div class="panel panel-info">
+        <!-- Default panel contents -->
+        <div class="panel panel-heading">地区管理
+            <div class="btn btn-inverse">
+                <button  type="button" class="btn btn-primary"  onclick="addNode()"><span class="glyphicon glyphicon-plus">增加</span></button>
+                <button  type="button" class="btn btn-primary"  onclick="Excel()"><span class="glyphicon glyphicon-plus">导出</span></button>
+            </div>
+        </div>
+        <div class="panel-body">
+            <div id="treeDiv" class="ztree"></div>
+        </div>
+    </div>
+    </div>
+</div>
+
+
+</body>
+<script type="text/javascript">
+    $(function () {
+        initZtree();
+    })
+
+    var deptSetting = {
+        view: {
+            selectedMulti: false,
+        },
+        data: {
+            simpleData: {
+                enable: true,            // 简单数据模式
+                pIdKey:"pid",
+            }
+        },
+        check:{
+            enable:true,
+            chkStyle:"checkbox",
+            chkboxType: { "Y": "p", "N": "s" }
+        }
+    }
+
+
+    //初始化数据
+    function initZtree() {
+        $.post({
+            url: "http://localhost:8081/area/queryAreaList",
+            dataType: "json",
+            success: function (result) {
+                result=result.data;
+                $.fn.zTree.init($("#treeDiv"), deptSetting, result);
+            },
+
+        })
+}
+
+   //增加节点
+    var ztreeObj;
+    var addBox;
+    function addNode() {
+
+        ztreeObj= $.fn.zTree.getZTreeObj("treeDiv");
+       var selNodes= ztreeObj.getSelectedNodes();
+       if(selNodes.length == 0){
+        alert("请选中要增加的节点");
+        return false;
+       }
+
+        addBox= bootbox.confirm({
+            message:$("#dataHtml").html(),
+            title:"新增列表",
+            buttons: {
+                confirm: {
+                    label: '添加',
+                    className: 'btn-success'
+                },
+                cancel: {
+                    label: '取消',
+                    className: 'btn-danger'
+                }
+            },
+            callback: function (result) {
+                if(result){
+                    $.ajax({
+                        url:"http://localhost:8081/area/addArea",
+                        type:"post",
+                        data:$("#areaFrom",addBox).serialize(),
+                        success:function (data) {
+                            if(data.code==200){
+                                alert("新增成功");
+                                window.location.reload();
+                            }
+                        },
+                        error:function () {
+                            bootbox.alert("新增失败！");
+                        }
+                    })
+                }
+
+            }
+        });
+        $("#pid",addBox).val(selNodes[0].id);
+        $("#parentName",addBox).val(selNodes[0].name);
+    }
+
+
+    function Excel() {
+        ztreeObj= $.fn.zTree.getZTreeObj("treeDiv");
+        var checkNodes= ztreeObj.getCheckedNodes(true);
+        if(checkNodes.length ==0){
+           alert("请选择要导出的数据");
+           return false;
+        }
+        var ids=[];
+        for (var i = 0; i <checkNodes.length ; i++) {
+            ids.push(checkNodes[i].id);
+        }
+        alert(ids);
+           location.href="http://localhost:8081/area/queryAreaListByIds?ids="+ids;
+    }
+</script>
+
+<script type="text/html" id="dataHtml">
+    <form class="form-horizontal" id="areaFrom">
+        <input type="hidden"  name="pid" id="pid"/>
+        <div class="form-group">
+            <label  class="col-sm-2 control-label">父地区名称</label>
+            <div class="col-sm-10">
+                <input type="text"  id="parentName"  class="form-control" readonly >
+            </div>
+        </div>
+        <div class="form-group">
+            <label  class="col-sm-2 control-label">地区名称</label>
+            <div class="col-sm-10">
+                <input type="text" name="name" id="name" class="form-control" required maxlength="50"  placeholder="请输入地区名长度不能大于五十。">
+            </div>
+        </div>
+    </form>
+</script>
+</html>
