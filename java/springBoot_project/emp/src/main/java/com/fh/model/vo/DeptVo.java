@@ -1,18 +1,13 @@
-package com.fh.model;
+package com.fh.model.vo;
 
-import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
 
-@TableName("t_dept")
-public class Dept {
-
-    @TableId(value = "id",type = IdType.AUTO)
+public class DeptVo {
     private Integer id;
 
-    @TableField("deptName")
     private String deptName;
+
+    private String leaderName;
 
     public Integer getId() {
         return id;
@@ -28,5 +23,13 @@ public class Dept {
 
     public void setDeptName(String deptName) {
         this.deptName = deptName;
+    }
+
+    public String getLeaderName() {
+        return leaderName;
+    }
+
+    public void setLeaderName(String leaderName) {
+        this.leaderName = leaderName;
     }
 }

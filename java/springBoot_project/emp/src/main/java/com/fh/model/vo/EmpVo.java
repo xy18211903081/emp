@@ -1,33 +1,29 @@
-package com.fh.model;
+package com.fh.model.vo;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.util.Date;
 
-@TableName("t_emp")
-public class Emp {
+public class EmpVo {
 
-    @TableId(value = "id",type = IdType.AUTO)
     private  Integer id;
 
-    @TableField("empName")
-    private String empName;
-    @TableField("jobId")
     private Integer jobId;
+
+    private String empName;
 
     private Double salary;
 
     @DateTimeFormat(pattern = "yyyy-MM-dd")
-    @TableField("createDate")
     private Date createDate;
-    @TableField("deptId")
+
     private Integer deptId;
-    @TableField("leaderId")
+
     private Integer leaderId;
+
+    private String deptName;
+
+    private String jobName;
 
     public Integer getId() {
         return id;
@@ -73,9 +69,6 @@ public class Emp {
         return leaderId;
     }
 
-    public void setLeaderId(Integer leaderId) {
-        this.leaderId = leaderId;
-    }
     public String getEmpName() {
         return empName;
     }
@@ -84,4 +77,23 @@ public class Emp {
         this.empName = empName;
     }
 
+    public void setLeaderId(Integer leaderId) {
+        this.leaderId = leaderId;
+    }
+
+    public String getDeptName() {
+        return deptName;
+    }
+
+    public void setDeptName(String deptName) {
+        this.deptName = deptName;
+    }
+
+    public String getJobName() {
+        return jobName;
+    }
+
+    public void setJobName(String jobName) {
+        this.jobName = jobName;
+    }
 }
