@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<link href="/common/bootstrap/css/bootstrap.min.css" rel="stylesheet"/>
+<link href="/common/datatable/DataTables-1.10.18/css/dataTables.bootstrap.min.css" rel="stylesheet"/>
+<link href="/common/ztree/css/bootstrapStyle/bootstrapStyle.css" rel="stylesheet"/>
+<link href="/common/fileinput/css/fileinput.min.css" rel="stylesheet"/>
+
+
+<script type="text/javascript" src="/common/jquery-3.3.1.min.js"></script>
+<script type="text/javascript" src="/common/bootstrap/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="/common/datatable/DataTables-1.10.18/js/jquery.dataTables.min.js"></script>
+<script type="text/javascript" src="/common/datatable/DataTables-1.10.18/js/dataTables.bootstrap.min.js"></script>
+<script type="text/javascript" src="/common/bootbox/bootbox.min.js"></script>
+<script type="text/javascript" src="/common/ztree/js/jquery.ztree.all.min.js"></script>
+<script type="text/javascript" src="/common/fileinput/js/fileinput.min.js"></script>
+<script type="text/javascript" src="/common/dateFormat.js"></script>
+<body>
+
+
+<div>
+    <div class="panel panel-info">
+        <div class="panel panel-info">
+            <!-- Default panel contents -->
+            <div class="panel-heading">条件查询</div>
+            <div class="panel-body">
+                <form class="form-horizontal" id="searchForm">
+                    <div class="row">
+                        <div class="form-inline">
+                            <div class="form-group col-md-4">
+                                <label>用户名</label>
+                                <input type="text" class="form-control" id="name"/>
+                            </div>
+                        </div>
+                        <div class="form-inline">
+                            <div class="form-group  col-md-4">
+                                <label class="control-label" >价格:</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control"  id="startDate">
+                                    <div class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span> </div>
+                                    <input type="text" class="form-control" id="endDate">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-inline">
+                            <div class="form-group  col-md-6">
+                                <button type="button" class="btn btn-primary" onclick="searchForm()">查询</button>
+                                <button type="reset" class="btn btn-primary">重置</button>
+                            </div>
+                        </div>
+                    </div>
+
+
+                </form>
+            </div>
+        </div>
+        <!-- Default panel contents -->
+        <div class="panel panel-heading">员工管理
+            <div class="btn btn-inverse">
+                <button  type="button" class="btn btn-primary"  onclick="addStudent()"><span class="glyphicon glyphicon-plus">增加</span></button>
+           </div>
+        </div>
+        <div class="panel-body">
+            <table id="tableList" class="table table-bordered table-striped" style="table-layout: fixed" ></table>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    var DataTable= $("#tableList").DataTable({
+        "autoWidth":true, //自适应宽度
+        "info":true,//展示表格左下角信息,分页栏
+        "lengthChange":true,//是否改变每页展示的条数
+        "lengthMenu": [ 2, 5, 10 ],
+        "ordering": false,//是否允许排序
+        "paging": true,//是否允许开启本地分页
+        "processing": true,//是否先处理状态
+        "serverSide": true,//true是服务器模式，false是客户端模式
+        ajax:{
+            url:"http://localhost:8080/emp/queryEmpList",
+            dataSrc:function(result){
+                return result.data;
+            },
+        },
+        "columns":[
+            {"data":"empName","title":"员工名称"},
+            {"data":"jobName","title":"岗位名称"},
+            {"data":"salary","title":"工资"},
+            {"data":"createDate","title":"入职时间",render:function (data, type, row, meta) {
+                    if(data==null){
+                        return "";
+                    }
+                    return  new Date(data).Format("yyyy-MM-dd")
+                }},
+            {"data":"deptName","title":"部门名称"},
+            {"data":"id","title":"操作",render:function (data, type, row, meta) {
+
+                    return '<button type="button" class="btn btn-danger" onclick="deleteStudent('+data+')"><span class="glyphicon glyphicon-remove">删除</span></button>'
+                        + "   " +'<button type="button" class="btn btn-warning" onclick="updateStudent('+data+')"><span class="glyphicon glyphicon-pencil">修改</span></button>';
+                }
+            },
+        ],
+        language:{
+            url:"/common/datatable/Chinese.json"
+        }
+    })
+
+
+    //批量删除
+    function PLdelStudent() {
+        //条数
+        var count;
+        var abc =[];//定义一个数组   count
+        $('input[name="sel"]:checked').each(function(){//遍历每一个名字为interest的复选框，其中选中的执行函数
+            abc.push($(this).val());//将选中的值添加到数组chk_value中
+        });
+        count=abc.length;
+        if(count == 0){
+            bootbox.alert("至少选择一项");
+            return false;
+        }
+        var ids ="";
+        $("[name='sel']:checked").each(function () {
+            ids+=($(this).val())+",";
+        })
+        ids=ids.substring(0,ids.length-1);
+        bootbox.dialog({
+            message:"你确定要删除这"+count+"条吗？",
+            title:"删除药品信息",
+            buttons:{
+                cancel:{
+                    "label":"取消",
+                    "className":"btn-danger",
+                    callback:function () {
+
+                    }
+                },
+                save:{
+                    "label":"删除",
+                    "className":"btn-success",
+                    callback:function (result) {
+                        if(result){
+                            $.ajax({
+                                url:"http://localhost:8080/book/deleteBookPL",
+                                type:"post",
+                                data:{"ids":ids},
+                                success:function (result) {
+                                    if(result.code=200) {
+                                        bootbox.alert(result.message);
+                                        DataTable.ajax.reload();
+                                    }else {
+                                        bootbox.alert(result.message);
+                                    }
+                                },
+                                error:function () {
+                                    bootbox.alert("删除异常！");
+                                }
+                            })
+                        }
+                    }
+                }
+            }
+        })
+    }
+
+
+    //条件查询
+    function searchForm(){
+        var jsonData={};
+        var name=$("#name").val();
+        var smallPrice=$("#startDate").val();
+        var bigPrice=$("#endDate").val();
+
+        jsonData.name=name;
+        jsonData.startDate=smallPrice;
+        jsonData.endDate=bigPrice;
+
+        DataTable.settings()[0].ajax.data=jsonData;
+        DataTable.ajax.reload();
+    }
+
+    //单个删除
+    function deleteStudent(id) {
+        bootbox.dialog({
+            message:"你确定要删除吗？",
+            title:"删除学生信息",
+            buttons:{
+                cancel:{
+                    "label":"取消",
+                    "className":"btn-danger",
+                    callback:function () {
+
+                    }
+                },
+                save:{
+                    "label":"删除",
+                    "className":"btn-success",
+                    callback:function (result) {
+                        if(result){
+                            $.ajax({
+                                url:"http://localhost:8080/order/updateOrderIsDel",
+                                type:"post",
+                                data:{"id":id},
+                                success:function (result) {
+                                    if(result.code=200) {
+                                        bootbox.alert("删除成功");
+                                        DataTable.ajax.reload();
+                                    }
+                                },
+                                error:function () {
+                                    bootbox.alert("删除异常！");
+                                }
+                            })
+                        }
+                    }
+                }
+            }
+        })
+    }
+
+
+    //增加
+    var addbox;
+    function addStudent(id) {
+        addbox=bootbox.dialog({
+            message:$("#addScript").html(),
+            title:"新增员工信息",
+            buttons:{
+                cancel:{
+                    "label":"取消",
+                    "className":"btn-danger",
+                    callback:function () {
+
+                    }
+                },
+                save:{
+                    "label":"增加",
+                    "className":"btn-success",
+                    callback:function (result) {
+                        if(result){
+                            $.ajax({
+                                url:"http://localhost:8080/emp/addEmp",
+                                type:"post",
+                                data:$("#addFrom",addbox).serialize(),
+                                success:function (result) {
+                                    if(result.code==200) {
+                                        bootbox.alert("新增成功")
+                                        DataTable.ajax.reload();
+                                    }else {
+                                        bootbox.alert(result.message);
+                                    }
+                                },
+                                error:function () {
+                                    bootbox.alert("增加异常！");
+                                }
+                            })
+                        }
+                    }
+                }
+            }
+        })
+        queryClassList();
+        queryDeptList();
+    /*    $("#newPhoto",addbox).fileinput({
+            language:"zh",
+            dropZoneEnabled:false,//是否显示拖拽区域
+            showCaption:false,//是否显示标题
+            uploadUrl:"http://localhost:8080/student/uploadFile",
+        }).on("fileuploaded",function (event,result,previewId,index) {
+            //data 相当于map传过来的值
+            alert(JSON.stringify(result.response));
+            var url=result.response.data;
+            $("#mainImg",addbox).val(url);
+        });*/
+    }
+
+    function queryClassList() {
+        $.post({
+            url:"http://localhost:8080/emp/queryJobList",
+            success:function (result) {
+                var areaHtml='<option value="-1">请选择</option>';
+                if(result){
+                    var aaa= $("#typeValue",updatebox).val();
+                    alert(JSON.stringify(result))
+                    var list=result.data;
+                    for (var i = 0; i <list.length ; i++) {
+                         if(aaa == list[i].id){
+                             areaHtml+='<option value="'+list[i].id+'" selected>'+list[i].jobName+'</option>';
+                         }else {
+                        areaHtml+='<option value="'+list[i].id+'">'+list[i].jobName+'</option>';
+                        }
+
+                    }
+                    $("#jobId",addbox).html(areaHtml);
+                    //$("#typeId",updatebox).html(areaHtml);
+                }
+            },error:function () {
+                alert("错了")
+            }
+        })
+    }
+
+    function queryDeptList() {
+        $.post({
+            url:"http://localhost:8080/emp/queryDeptList",
+            success:function (result) {
+                var areaHtml='<option value="-1">请选择</option>';
+                if(result){
+                    var aaa= $("#typeValue",updatebox).val();
+                    alert(JSON.stringify(result))
+                    var list=result.data;
+                    for (var i = 0; i <list.length ; i++) {
+                        if(aaa == list[i].id){
+                            areaHtml+='<option value="'+list[i].id+'" selected>'+list[i].deptName+'</option>';
+                        }else {
+                            areaHtml+='<option value="'+list[i].id+'">'+list[i].deptName+'</option>';
+                        }
+
+                    }
+                    $("#deptId",addbox).html(areaHtml);
+                    //$("#typeId",updatebox).html(areaHtml);
+                }
+            },error:function () {
+                alert("错了")
+            }
+        })
+    }
+
+    
+    function lingdaoValue(id) {
+        if(id !=null){
+        $.post({
+            url:"http://localhost:8080/emp/queryDeptList",
+            success:function (result) {
+                var areaHtml='<option value="-1">请选择</option>';
+                if(result){
+                    alert(JSON.stringify(result))
+                    var list=result.data;
+                    for (var i = 0; i <list.length ; i++) {
+                        if(id == list[i].id){
+                            $("#lingdaoDiv",addbox).show();
+                            areaHtml+='<option value="'+list[i].id+'" selected>'+list[i].leaderName+'</option>';
+                        }/*else {
+                            areaHtml+='<option value="'+list[i].id+'">'+list[i].deptName+'</option>';
+                        }*/
+
+                    }
+                    $("#leaderId",addbox).html(areaHtml);
+                }
+            },error:function () {
+                alert("错了")
+            }
+        })
+        }
+    }
+    
+    function queryClassLists() {
+        $.post({
+            url:"http://localhost:8080/order/queryProductList",
+            success:function (result) {
+                var areaHtml='<option value="-1">请选择</option>';
+                if(result){
+                    var aaa= $("#typeValue",updatebox).val();
+                    alert(aaa);
+                    alert(JSON.stringify(result))
+                    var list=result.data;
+                    for (var i = 0; i <list.length ; i++) {
+                        if(aaa == list[i].id){
+                            areaHtml+='<option value="'+list[i].id+'" selected>'+list[i].name+'</option>';
+                        }else {
+                            areaHtml+='<option value="'+list[i].id+'">'+list[i].name+'</option>';
+                        }
+
+                    }
+                    $("#typeId",updatebox).html(areaHtml);
+                    //$("#typeId",updatebox).html(areaHtml);
+                }
+            },error:function () {
+                alert("错了")
+            }
+        })
+    }
+
+    //修改
+    var updatebox;
+    function updateStudent(id) {
+        var updateJsonData={};
+        $.post({
+            url:"http://localhost:8080/order/huixianById",
+            data:{id:id},
+            async:false,
+            dataType:"json",
+            success:function (result) {
+
+                if(result.code ==200){
+                    var  updateJsonData= result.data;
+                    var  updateJsonDatas= result.datas;
+                    updatebox=bootbox.dialog({
+                        message:$("#addScript").html(),
+                        title:"修改药品信息",
+                        buttons:{
+                            cancel:{
+                                "label":"取消",
+                                "className":"btn-danger",
+                                callback:function () {
+
+                                }
+                            },
+                            save:{
+                                "label":"修改",
+                                "className":"btn-success",
+                                callback:function (result) {
+                                    if(result){
+                                        $.ajax({
+                                            url:"http://localhost:8080/order/updateOrder",
+                                            type:"post",
+                                            data:$("#addFrom",updatebox).serialize(),
+                                            success:function (result) {
+                                                if(result.code=200) {
+                                                    bootbox.alert("增加成功")
+                                                    DataTable.ajax.reload();
+                                                }
+                                            },
+                                            error:function () {
+                                                bootbox.alert("增加异常！");
+                                            }
+                                        })
+                                    }
+                                }
+                            }
+                        }
+                    })
+                    $("#id",updatebox).val(updateJsonData.id);
+                  alert(JSON.stringify(updateJsonData))
+                  alert(JSON.stringify(updateJsonDatas))
+                   $("#typeValue",updatebox).val(updateJsonData.productid);
+                   $("#counts",updatebox).val(updateJsonData.counts);
+                   $("#price",updatebox).val(updateJsonData.price);
+                    $("#oneprice",updatebox).val(updateJsonDatas);
+                    queryClassLists();
+                }
+            }
+        })
+
+    }
+
+    function jiage(id) {
+        $.ajax({
+            url:"http://localhost:8080/order/huixianMoney",
+            type:"post",
+            data:{id:id},
+            success:function (result) {
+                if(result.code=200) {
+                  var danjia =result.data
+                    //alert(danjia)
+                    $("#oneprice",addbox).val(danjia);
+                    $("#oneprice",updatebox).val(danjia);
+                    $("#price",updatebox).val("");
+                    $("#counts",updatebox).val("");
+                }
+            },
+            error:function () {
+                bootbox.alert("获取价钱异常！");
+            }
+        })
+    }
+    
+
+</script>
+
+<!-- 新增模块 -->
+<div id="addScript" style="display:none">
+    <form class="form-horizontal" id="addFrom">
+        <input type="hidden" name="id" id="id" class="form-control"/>
+
+        <div class="form-group">
+            <label class="col-sm-2 control-label">员工名称</label>
+            <div class="col-sm-10">
+                <input type="text" name="empName" id="empName"  class="form-control"/>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="col-sm-2 control-label">工资</label>
+            <div class="col-sm-10">
+                <input type="text" name="salary" id="salary"  class="form-control"/>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label  class="col-sm-2 control-label">岗位</label>
+            <div class="col-sm-3">
+                <input type="hidden" id="jobValue">
+                <select name="jobId" id="jobId"  class="form-control" ></select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label  class="col-sm-2 control-label">岗位</label>
+            <div class="col-sm-3">
+                <input type="hidden" id="deptValue">
+                <select name="deptId" id="deptId"  class="form-control" onchange="lingdaoValue(this.value)"></select>
+            </div>
+        </div>
+
+        <div class="form-group"  style="display: none" id="lingdaoDiv">
+            <label  class="col-sm-2 control-label">领导</label>
+            <div class="col-sm-3">
+                <input type="hidden" id="leaderValue">
+                <select name="leaderId" id="leaderId"  class="form-control" ></select>
+            </div>
+        </div>
+    </form>
+</div>
+</body>
+</html>
